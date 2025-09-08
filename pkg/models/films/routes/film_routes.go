@@ -20,7 +20,9 @@ func RegisterFilmRoutes(r *gin.Engine) {
 			}
 			repo := &repositories.FilmRepository{DB: db}
 			service := &services.FilmService{Repo: repo}
-			films, err := service.ListFilms()
+
+			var films, err = service.ListAllFilms()
+
 			if err != nil {
 				c.JSON(500, gin.H{"error": err.Error()})
 				return

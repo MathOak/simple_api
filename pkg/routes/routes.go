@@ -1,18 +1,19 @@
 package routes
 
 import (
-	"net/http"
-	"simple_api/pkg/controllers"
+	filmRoutes "simple_api/pkg/models/films/routes"
 
-	"gorm.io/gorm"
+	"github.com/gin-gonic/gin"
+	// importe outros módulos de rotas aqui
 )
 
-func RegisterRoutes(mux *http.ServeMux, db *gorm.DB) {
-	mux.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {
-		controllers.Docs(w, r)
+func RegisterRoutes(r *gin.Engine) {
+	// Rotas principais
+	r.GET("/docs", func(c *gin.Context) {
+		c.JSON(200, gin.H{"message": "Documentação"})
 	})
-	// Exemplo de rota paginada
-	mux.HandleFunc("/items", func(w http.ResponseWriter, r *http.Request) {
-		controllers.GetItems(w, r, db)
-	})
+
+	// Subrotas
+	filmRoutes.RegisterFilmRoutes(r)
+	// chame outras funções de registro de subrotas aqui
 }

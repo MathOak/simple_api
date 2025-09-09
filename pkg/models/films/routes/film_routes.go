@@ -1,27 +1,17 @@
 package routes
 
 import (
-	"simple_api/pkg/models/films/repositories"
 	"simple_api/pkg/models/films/services"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func RegisterFilmRoutes(r *gin.Engine) {
 	films := r.Group("/films")
 	{
 		films.GET("/", func(c *gin.Context) {
-			// Recupera o *gorm.DB do contexto global (defina via middleware se necessário)
-			db, ok := c.MustGet("db").(*gorm.DB)
-			if !ok {
-				c.JSON(500, gin.H{"error": "DB connection not found"})
-				return
-			}
-			repo := &repositories.FilmRepository{DB: db}
-			service := &services.FilmService{Repo: repo}
 
-			var films, err = service.ListAllFilms()
+			var films, err = services.ListAllFilms(c)
 
 			if err != nil {
 				c.JSON(500, gin.H{"error": err.Error()})
@@ -29,6 +19,21 @@ func RegisterFilmRoutes(r *gin.Engine) {
 			}
 			c.JSON(200, films)
 		})
-		// Adicione outras rotas relacionadas a filmes aqui
+		// Rota de busca com parâmetros
+		films.GET("/search", func(c *gin.Context) {
+			// Exemplos de parâmetros: title, year, director, order_by, order_dir
+			title := c.Query("title")
+			year := c.Query("year")
+			director := c.Query("director")
+			orderBy := c.DefaultQuery("order_by", "")
+			orderDir := c.DefaultQuery("order_dir", "asc")
+
+			var films, err = services.SearchFilmsOrdered(c, title, year, director, orderBy, orderDir)
+			if err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(200, films)
+		})
 	}
 }

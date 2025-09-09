@@ -6,4 +6,5 @@ type FilmDTO struct {
 	Year     int    `json:"year"`
 	Genre    string `json:"genre"`
 	Director string `json:"director"`
+	Link     string `json:"link"`
 }

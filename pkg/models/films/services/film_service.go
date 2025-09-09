@@ -3,35 +3,114 @@ package services
 import (
 	"simple_api/pkg/models/films/dto"
 	"simple_api/pkg/models/films/repositories"
-	"simple_api/pkg/models/films/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-// O pacote services contém a lógica de negócio relacionada aos filmes.
-
-// Importa os pacotes necessários:
-// - dto: define os Data Transfer Objects para filmes.
-// - repositories: fornece acesso ao repositório de filmes.
 type FilmService struct {
 	Repo *repositories.FilmRepository
 }
 
-func (s *FilmService) ListFilms() ([]dto.FilmDTO, error) {
-	return s.Repo.GetAllFilms()
+func ListAllFilms(c *gin.Context) ([]dto.FilmDTO, error) {
+	films, err := repositories.GetAllFilms(c)
+	if err != nil {
+		return nil, err
+	}
+	var filmsDTO []dto.FilmDTO
+	for _, film := range films {
+		filmsDTO = append(filmsDTO, dto.FilmDTO{
+			ID:       film.ID,
+			Title:    film.Title,
+			Year:     film.Year,
+			Genre:    film.Genre,
+			Director: film.Director,
+			Link:     film.Link,
+		})
+	}
+	return filmsDTO, nil
 }
 
-func (s *FilmService) ListAllFilms(c *gin.Context) ([]dto.FilmDTO, error) {
-	// Recupera o *gorm.DB do contexto global (defina via middleware se necessário)
+// Busca filmes por parâmetros (exemplo: title, year, director)
+func SearchFilms(c *gin.Context, title, year, director string) ([]dto.FilmDTO, error) {
 	db, ok := c.MustGet("db").(*gorm.DB)
 	if !ok {
 		c.JSON(500, gin.H{"error": "DB connection not found"})
-		return
+		return nil, nil
 	}
-	repo := &repositories.FilmRepository{DB: db}
-	service := &services.FilmService{Repo: repo}
-	films, err := service.ListFilms()
 
-	return films, err
+	var films []dto.Films
+	query := db.Model(&dto.Films{})
+	if title != "" {
+		query = query.Where("title LIKE ?", "%"+title+"%")
+	}
+	if year != "" {
+		query = query.Where("year = ?", year)
+	}
+	if director != "" {
+		query = query.Where("director LIKE ?", "%"+director+"%")
+	}
+	if err := query.Find(&films).Error; err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return nil, err
+	}
+
+	var filmsDTO []dto.FilmDTO
+	for _, film := range films {
+		filmsDTO = append(filmsDTO, dto.FilmDTO{
+			ID:       film.ID,
+			Title:    film.Title,
+			Year:     film.Year,
+			Genre:    film.Genre,
+			Director: film.Director,
+			Link:     film.Link,
+		})
+	}
+	return filmsDTO, nil
+}
+
+// Busca filmes por parâmetros e ordenação
+func SearchFilmsOrdered(c *gin.Context, title, year, director, orderBy, orderDir string) ([]dto.FilmDTO, error) {
+	db, ok := c.MustGet("db").(*gorm.DB)
+	if !ok {
+		c.JSON(500, gin.H{"error": "DB connection not found"})
+		return nil, nil
+	}
+
+	var films []dto.Films
+	query := db.Model(&dto.Films{})
+	if title != "" {
+		query = query.Where("title LIKE ?", "%"+title+"%")
+	}
+	if year != "" {
+		query = query.Where("year = ?", year)
+	}
+	if director != "" {
+		query = query.Where("director LIKE ?", "%"+director+"%")
+	}
+	// Ordenação
+	if orderBy != "" {
+		dir := "asc"
+		if orderDir == "desc" {
+			dir = "desc"
+		}
+		query = query.Order(orderBy + " " + dir)
+	}
+	if err := query.Find(&films).Error; err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return nil, err
+	}
+
+	var filmsDTO []dto.FilmDTO
+	for _, film := range films {
+		filmsDTO = append(filmsDTO, dto.FilmDTO{
+			ID:       film.ID,
+			Title:    film.Title,
+			Year:     film.Year,
+			Genre:    film.Genre,
+			Director: film.Director,
+			Link:     film.Link,
+		})
+	}
+	return filmsDTO, nil
 }

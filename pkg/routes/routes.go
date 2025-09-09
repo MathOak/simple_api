@@ -4,14 +4,14 @@ import (
 	filmRoutes "simple_api/pkg/models/films/routes"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	// importe outros módulos de rotas aqui
 )
 
 func RegisterRoutes(r *gin.Engine) {
-	// Rotas principais
-	r.GET("/docs", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "Documentação"})
-	})
+	// Rota Swagger na rota /docs
+	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Subrotas
 	filmRoutes.RegisterFilmRoutes(r)
